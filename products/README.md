@@ -30,3 +30,4 @@ Depending on your preferred package manager, follow the instructions below to de
 ### Endpoints
  - GET - https://squct4imib.execute-api.ca-central-1.amazonaws.com/dev/products
  - GET - https://squct4imib.execute-api.ca-central-1.amazonaws.com/dev/products/{id}
+ - POST - https://squct4imib.execute-api.ca-central-1.amazonaws.com/dev/products

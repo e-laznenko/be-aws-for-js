@@ -25,3 +25,16 @@ export const getProductsById = {
         }
     ]
 }
+
+export const createProduct = {
+    handler: `${handlerPath(__dirname)}/create-product.createProduct`,
+    events: [
+        {
+            http: {
+                method: 'post',
+                path: 'products',
+                cors: true,
+            }
+        }
+    ]
+}

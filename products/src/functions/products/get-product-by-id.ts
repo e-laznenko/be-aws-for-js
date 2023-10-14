@@ -1,21 +1,14 @@
+import { DynamoDBClient, GetItemCommand } from "@aws-sdk/client-dynamodb";
 import { formatJSONResponse } from '@libs/api-gateway';
 import { middyfy } from '@libs/lambda';
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda/trigger/api-gateway-proxy";
-import * as fs from 'fs';
-import * as path from 'path';
+import {DynamoDB} from "aws-sdk";
 
-const getProductsFromJSON = (): any[] => {
-    const filePath = path.join(__dirname, 'products.json');
-    const rawData = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(rawData);
-}
-
-const getProductById = (id: string) => {
-    const products = getProductsFromJSON();
-    return products.find(product => product.id === id);
-}
+const ddbClient = new DynamoDBClient({ region: "ca-central-1" });
 
 export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+    console.log("Incoming request for getProductsById:", event);
+
     const productId = event.pathParameters?.id;
 
     if (!productId) {
@@ -24,15 +17,40 @@ export const getProductsById = middyfy(async (event: APIGatewayProxyEvent): Prom
         }, 400);
     }
 
-    const product = getProductById(productId);
+    try {
+        const productResult = await ddbClient.send(new GetItemCommand({
+            TableName: process.env.PRODUCTS_TABLE,
+            Key: {
+                "id": { S: productId }
+            }
+        }));
 
-    if (!product) {
+        if (!productResult.Item) {
+            return formatJSONResponse({
+                message: "Product not found."
+            }, 404);
+        }
+
+        const product = DynamoDB.Converter.unmarshall(productResult.Item);
+
+
+        const stockResult = await ddbClient.send(new GetItemCommand({
+            TableName: process.env.STOCKS_TABLE,
+            Key: {
+                "product_id": { S: productId }
+            }
+        }));
+
+        product.count = stockResult.Item ? parseInt(stockResult.Item.count.N, 10) : 0;
+
         return formatJSONResponse({
-            message: "Product not found."
-        }, 404);
-    }
+            product
+        });
 
-    return formatJSONResponse({
-        product
-    });
+    } catch (error) {
+        console.error("Error fetching product by ID:", error);
+        return formatJSONResponse({
+            message: "Internal server error."
+        }, 500);
+    }
 });
