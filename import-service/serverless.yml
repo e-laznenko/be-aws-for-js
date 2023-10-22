@@ -1,0 +1,50 @@
+
+service: import-service
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ca-central-1
+  iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - s3:PutObject
+          - s3:GetObject
+          - s3:DeleteObject
+          - s3:CopyObject
+        Resource:
+          - arn:aws:s3:::upload-aws-js/uploaded/*
+          - arn:aws:s3:::upload-aws-js/parsed/*
+
+functions:
+  importProductsFile:
+    handler: functions/import-products-file.handler
+    events:
+      - http:
+          path: import
+          method: get
+          cors:
+            origins:
+              - '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          request:
+            parameters:
+              querystrings:
+                name: true
+  importFileParser:
+    handler: functions/import-file-parser.handler
+    events:
+      - s3:
+          bucket: upload-aws-js
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: uploaded/
+            - suffix: .csv
+          existing: true
