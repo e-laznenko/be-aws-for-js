@@ -3,8 +3,8 @@ const s3 = new AWS.S3();
 const csvParser = require('csv-parser');
 
 const sqs = new AWS.SQS();
-const SQS_QUEUE_URL = 'https://sqs.ca-central-1.amazonaws.com/038887531393/products-dev-CatalogItemsQueue-C8YJJbMHBiqW';
 const SQS_QUEUE_URL = process.env.SQS_QUEUE_URL;
+
 module.exports.handler = async (event) => {
     for (const record of event.Records) {
         const bucketName = record.s3.bucket.name;
