@@ -24,7 +24,7 @@ export const getProductsById = {
             }
         }
     ]
-}
+};
 
 export const createProduct = {
     handler: `${handlerPath(__dirname)}/create-product.createProduct`,
@@ -37,4 +37,20 @@ export const createProduct = {
             }
         }
     ]
-}
+};
+
+export const catalogBatchProcess = {
+    handler: `${handlerPath(__dirname)}/catalog-batch-process.catalogBatchProcess`,
+    events: [
+        {
+            sqs: {
+                batchSize: 5,
+                arn: {
+                    'Fn::GetAtt': ['CatalogItemsQueue', 'Arn']
+                }
+            }
+        }
+    ]
+};
+
+

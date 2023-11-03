@@ -1,7 +1,9 @@
 const AWS = require('aws-sdk');
 const s3 = new AWS.S3();
 const csvParser = require('csv-parser');
-const { Readable } = require('stream');
+
+const sqs = new AWS.SQS();
+const SQS_QUEUE_URL = process.env.SQS_QUEUE_URL;
 
 module.exports.handler = async (event) => {
     for (const record of event.Records) {
@@ -16,22 +18,22 @@ module.exports.handler = async (event) => {
         await new Promise((resolve, reject) => {
             s3Stream
                 .pipe(csvParser())
-                .on('data', (data) => {
-                    console.log(data);
+                .on('data', async (data) => {
+                    await sqs.sendMessage({
+                        QueueUrl: SQS_QUEUE_URL,
+                        MessageBody: JSON.stringify(data)
+                    }).promise();
                 })
                 .on('end', resolve)
                 .on('error', reject);
         });
 
         const targetKey = sourceKey.replace('uploaded/', 'parsed/');
-
-
         await s3.copyObject({
             Bucket: bucketName,
             CopySource: `${bucketName}/${sourceKey}`,
             Key: targetKey,
         }).promise();
-
 
         await s3.deleteObject({
             Bucket: bucketName,
