@@ -1,0 +1,24 @@
+service: authorization-service
+frameworkVersion: "3"
+
+plugins:
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ca-central-1
+
+  iamRoleStatements:
+    - Effect: 'Allow'
+      Action:
+        - execute-api:Invoke
+      Resource: '*'
+
+functions:
+  basicAuthorizer:
+    handler: functions/basic-authorizer.handler
+    description: Basic Authorization Lambda Function
+    environment:
+      TEST_USER: ${env.userLogin}
+
